@@ -357,15 +357,6 @@ export default function Home() {
                     : "추천받기를 누르면 확인해요"}
                 </div>
               </div>
-
-              <div className="rounded-[24px] bg-[#e8b94a] p-6">
-                <div className="text-[18px] font-medium leading-tight tracking-[-0.5px] text-[#0a0a0a]">
-                  장충동 족발골목
-                </div>
-                <div className="mt-2 text-[13px] leading-relaxed text-[#0a0a0a]/70">
-                  사무실에서 도보 3분. 애매하면 여기부터.
-                </div>
-              </div>
             </div>
           </div>
         </div>
