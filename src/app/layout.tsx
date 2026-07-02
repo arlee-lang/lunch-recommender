@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "점심추천기 | 동대입구역 점심메뉴 추천",
+  title: "오늘 뭐먹지????",
   description: "걸을 수 있는 거리와 먹고 싶은 메뉴만 고르면 근처 식당 3곳을 바로 추천해드려요.",
 };
 
