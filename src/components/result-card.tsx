@@ -7,6 +7,7 @@ const CATEGORY_TEXT_COLOR: Record<Restaurant["category_group"], string> = {
   일식: "#b8425e",
   분식: "#e2483d",
   카페: "#8a5a3a",
+  채식: "#3f8a5f",
   기타: "#7a63c9",
 };
 
