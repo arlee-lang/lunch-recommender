@@ -14,14 +14,14 @@ const DISTANCE_OPTIONS: { value: WalkMinutes; sub: string }[] = [
 ];
 
 const CATEGORY_OPTIONS: { value: CategorySelection; label: string; sub: string; accentColor?: string }[] = [
-  { value: "한식", label: "한식", sub: "밥·면·고기" },
-  { value: "중식", label: "중식", sub: "짜장·짬뽕" },
-  { value: "양식", label: "양식", sub: "파스타·스테이크" },
-  { value: "일식", label: "일식", sub: "초밥·라멘·돈까스" },
-  { value: "분식", label: "분식", sub: "떡볶이·김밥" },
-  { value: "카페", label: "카페", sub: "커피·디저트" },
+  { value: "한식", label: "🍚 한식", sub: "밥·면·고기" },
+  { value: "중식", label: "🥟 중식", sub: "짜장·짬뽕" },
+  { value: "양식", label: "🍝 양식", sub: "파스타·스테이크" },
+  { value: "일식", label: "🍣 일식", sub: "초밥·라멘·돈까스" },
+  { value: "분식", label: "🍢 분식", sub: "떡볶이·김밥" },
+  { value: "카페", label: "☕ 카페", sub: "커피·디저트" },
   { value: "채식", label: "🌱 채식", sub: "비건·두부·채식식당", accentColor: "#3f8a5f" },
-  { value: "아무거나", label: "아무거나", sub: "전체 다 보기" },
+  { value: "아무거나", label: "🎲 아무거나", sub: "전체 다 보기" },
 ];
 
 const PRICE_OPTIONS: { value: PriceTier; label: string; sub: string }[] = [
