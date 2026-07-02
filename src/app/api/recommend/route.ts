@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WALK_BAND_METERS, getOfficeFallbackCoords, searchRestaurants } from "@/lib/kakao";
-import { checkLunchHours } from "@/lib/google";
+import { checkPlaceDetails, priceOverlapsTier } from "@/lib/google";
 import {
   CategorySelection,
+  PriceTier,
   RecommendRequestBody,
   RecommendResponseBody,
   Restaurant,
@@ -11,14 +12,16 @@ import {
 
 const VALID_WALK_MINUTES: WalkMinutes[] = [5, 10, 15];
 const VALID_CATEGORIES: CategorySelection[] = ["한식", "중식", "양식", "일식", "분식", "카페", "아무거나"];
+const VALID_PRICE_TIERS: PriceTier[] = ["under10k", "10to15k", "15to20k", "over20k"];
 
 // Bounds how many Places API calls one "추천받기" click can spend — we only
-// need 3 final picks, not a lunch-hours check on the whole candidate pool.
-const MAX_LUNCH_CHECKS = 12;
+// need 3 final picks, not a lunch-hours/price check on the whole candidate pool.
+const MAX_PLACE_CHECKS = 12;
 
-async function pickThreeOpenAtLunch(
+async function pickThreeMatching(
   pool: Restaurant[],
-  excludeIds: string[]
+  excludeIds: string[],
+  priceTier: PriceTier | undefined
 ): Promise<Restaurant[]> {
   let avail = pool.filter((r) => !excludeIds.includes(r.id));
   if (avail.length < 3) avail = pool;
@@ -26,11 +29,21 @@ async function pickThreeOpenAtLunch(
   const shuffled = [...avail].sort(() => Math.random() - 0.5);
   const picked: Restaurant[] = [];
 
-  for (let i = 0; i < shuffled.length && i < MAX_LUNCH_CHECKS && picked.length < 3; i++) {
+  for (let i = 0; i < shuffled.length && i < MAX_PLACE_CHECKS && picked.length < 3; i++) {
     const candidate = shuffled[i];
-    const status = await checkLunchHours(candidate.id, candidate.name, candidate.lat, candidate.lng);
-    if (status === "closed") continue;
-    picked.push({ ...candidate, lunchHoursStatus: status });
+    const details = await checkPlaceDetails(candidate.id, candidate.name, candidate.lat, candidate.lng);
+    if (details.lunchStatus === "closed") continue;
+
+    if (priceTier && details.priceMin !== null && details.priceMax !== null) {
+      if (!priceOverlapsTier(details.priceMin, details.priceMax, priceTier)) continue;
+    }
+
+    picked.push({
+      ...candidate,
+      lunchHoursStatus: details.lunchStatus,
+      priceMin: details.priceMin ?? undefined,
+      priceMax: details.priceMax ?? undefined,
+    });
   }
 
   return picked;
@@ -38,11 +51,12 @@ async function pickThreeOpenAtLunch(
 
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as RecommendRequestBody;
-  const { lat, lng, walkMinutes, category, excludeIds } = body;
+  const { lat, lng, walkMinutes, category, priceTier, excludeIds } = body;
 
   if (
     !VALID_WALK_MINUTES.includes(walkMinutes) ||
-    !VALID_CATEGORIES.includes(category)
+    !VALID_CATEGORIES.includes(category) ||
+    (priceTier !== undefined && !VALID_PRICE_TIERS.includes(priceTier))
   ) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
@@ -66,7 +80,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(response);
     }
 
-    const restaurants = await pickThreeOpenAtLunch(pool, excludeIds ?? []);
+    const restaurants = await pickThreeMatching(pool, excludeIds ?? [], priceTier);
     const response: RecommendResponseBody = {
       restaurants,
       usedFallback,

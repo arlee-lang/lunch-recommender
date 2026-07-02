@@ -1,3 +1,5 @@
+import { PriceTier } from "./types";
+
 const LUNCH_START_MINUTES = 11 * 60;
 const LUNCH_END_MINUTES = 14 * 60;
 const MATCH_DISTANCE_TOLERANCE_M = 300;
@@ -12,24 +14,48 @@ const WEEKDAY_INDEX: Record<string, number> = {
   Sat: 6,
 };
 
+export const PRICE_TIER_RANGES: Record<PriceTier, { min: number; max: number }> = {
+  under10k: { min: 0, max: 10000 },
+  "10to15k": { min: 10000, max: 15000 },
+  "15to20k": { min: 15000, max: 20000 },
+  over20k: { min: 20000, max: Infinity },
+};
+
+export function priceOverlapsTier(priceMin: number, priceMax: number, tier: PriceTier): boolean {
+  const range = PRICE_TIER_RANGES[tier];
+  return priceMin <= range.max && priceMax >= range.min;
+}
+
 interface GoogleOpeningHoursPeriod {
   open: { day: number; hour: number; minute: number };
   close?: { day: number; hour: number; minute: number };
+}
+
+interface GooglePriceRange {
+  startPrice?: { units?: string };
+  endPrice?: { units?: string };
 }
 
 interface GooglePlace {
   id: string;
   location?: { latitude: number; longitude: number };
   regularOpeningHours?: { periods?: GoogleOpeningHoursPeriod[] };
+  priceRange?: GooglePriceRange;
 }
 
 export type LunchStatus = "open" | "closed" | "unknown";
+
+export interface PlaceDetails {
+  lunchStatus: LunchStatus;
+  priceMin: number | null;
+  priceMax: number | null;
+}
 
 function googleHeaders() {
   return {
     "Content-Type": "application/json",
     "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API_KEY ?? "",
-    "X-Goog-FieldMask": "places.id,places.location,places.regularOpeningHours",
+    "X-Goog-FieldMask": "places.id,places.location,places.regularOpeningHours,places.priceRange",
   };
 }
 
@@ -86,32 +112,43 @@ async function findGooglePlace(name: string, lat: number, lng: number): Promise<
 // Cache within a warm serverless instance so re-recommending, or multiple
 // teammates hitting the same nearby restaurant, don't re-spend Places API
 // quota on the same place on the same day.
-const lunchStatusCache = new Map<string, { status: LunchStatus; day: number }>();
+const placeDetailsCache = new Map<string, { details: PlaceDetails; day: number }>();
 
-export async function checkLunchHours(
+export async function checkPlaceDetails(
   id: string,
   name: string,
   lat: number,
   lng: number
-): Promise<LunchStatus> {
+): Promise<PlaceDetails> {
   const today = getSeoulDayOfWeek();
-  const cached = lunchStatusCache.get(id);
-  if (cached && cached.day === today) return cached.status;
+  const cached = placeDetailsCache.get(id);
+  if (cached && cached.day === today) return cached.details;
 
-  let status: LunchStatus = "unknown";
+  let details: PlaceDetails = { lunchStatus: "unknown", priceMin: null, priceMax: null };
   try {
     const place = await findGooglePlace(name, lat, lng);
-    const periods = place?.regularOpeningHours?.periods;
-    if (place?.location && periods?.length) {
+    if (place?.location) {
       const distance = haversineMeters(lat, lng, place.location.latitude, place.location.longitude);
       if (distance <= MATCH_DISTANCE_TOLERANCE_M) {
-        status = periodOverlapsLunch(periods, today) ? "open" : "closed";
+        const periods = place.regularOpeningHours?.periods;
+        const lunchStatus: LunchStatus = periods?.length
+          ? periodOverlapsLunch(periods, today)
+            ? "open"
+            : "closed"
+          : "unknown";
+
+        const startUnits = place.priceRange?.startPrice?.units;
+        const endUnits = place.priceRange?.endPrice?.units;
+        const priceMin = startUnits !== undefined ? Number(startUnits) : null;
+        const priceMax = endUnits !== undefined ? Number(endUnits) : null;
+
+        details = { lunchStatus, priceMin, priceMax };
       }
     }
   } catch {
-    status = "unknown";
+    details = { lunchStatus: "unknown", priceMin: null, priceMax: null };
   }
 
-  lunchStatusCache.set(id, { status, day: today });
-  return status;
+  placeDetailsCache.set(id, { details, day: today });
+  return details;
 }

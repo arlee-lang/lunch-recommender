@@ -13,9 +13,18 @@ const CATEGORY_TEXT_COLOR: Record<Restaurant["category_group"], string> = {
 interface ResultCardProps {
   restaurant: Restaurant;
   rank: number;
+  priceFilterActive?: boolean;
 }
 
-export function ResultCard({ restaurant, rank }: ResultCardProps) {
+function formatPrice(min?: number, max?: number): string | null {
+  if (min === undefined || max === undefined) return null;
+  const fmt = (n: number) => n.toLocaleString("ko-KR");
+  return min === max ? `${fmt(min)}원` : `${fmt(min)}~${fmt(max)}원`;
+}
+
+export function ResultCard({ restaurant, rank, priceFilterActive }: ResultCardProps) {
+  const priceText = formatPrice(restaurant.priceMin, restaurant.priceMax);
+
   return (
     <div className="flex items-stretch gap-3 rounded-[16px] border border-[#e5e5e5] bg-white px-4 py-4">
       <div className="flex w-9 flex-none items-start justify-center pt-0.5">
@@ -39,6 +48,16 @@ export function ResultCard({ restaurant, rank }: ResultCardProps) {
           {restaurant.lunchHoursStatus === "unknown" && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#fff4de] px-2.5 py-1 text-[12px] font-medium text-[#a06a00]">
               ⏰ 영업시간 미확인
+            </span>
+          )}
+          {priceText && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#f5f0e0] px-2.5 py-1 text-[12px] font-medium text-[#3a3a3a]">
+              💰 {priceText}
+            </span>
+          )}
+          {!priceText && priceFilterActive && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#fff4de] px-2.5 py-1 text-[12px] font-medium text-[#a06a00]">
+              💰 가격 미확인
             </span>
           )}
         </div>
