@@ -383,6 +383,25 @@ export default function Home() {
                     : "추천받기를 누르면 확인해요"}
                 </div>
               </div>
+
+              <a
+                href={`mailto:arom@kakao.com?subject=${encodeURIComponent(
+                  "[오늘 뭐먹지????] 배너 광고 문의"
+                )}&body=${encodeURIComponent(
+                  "안녕하세요, \"오늘 뭐먹지????\" 배너 광고 관련 문의드립니다.\n\n- 회사/브랜드명:\n- 광고 게재 희망 기간:\n- 문의 내용:\n"
+                )}`}
+                className="block rounded-[24px] border-2 border-dashed border-[#c9c2ad] bg-[#faf5e8] p-6 text-center no-underline transition-colors hover:bg-[#f5f0e0]"
+              >
+                <div className="text-[13px] font-semibold uppercase tracking-[1.5px] text-[#9a9a9a]">
+                  광고 자리
+                </div>
+                <div className="mt-2 text-[15px] font-semibold text-[#0a0a0a]">📣 광고주 모집 중</div>
+                <div className="mt-1 text-[12px] leading-relaxed text-[#6a6a6a]">
+                  이 자리에 배너 광고를 게재해보세요.
+                  <br />
+                  클릭하면 광고 문의 메일이 열려요.
+                </div>
+              </a>
             </div>
           </div>
         </div>
