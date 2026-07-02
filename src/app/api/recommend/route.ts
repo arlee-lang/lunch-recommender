@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  RADIUS_BY_WALK_MINUTES,
+  WALK_BAND_METERS,
   getOfficeFallbackCoords,
   pickRandomThree,
   searchRestaurants,
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
       usedFallback = true;
     }
 
-    const radiusM = RADIUS_BY_WALK_MINUTES[walkMinutes];
-    const pool = await searchRestaurants(coords.lat, coords.lng, radiusM, category);
+    const band = WALK_BAND_METERS[walkMinutes];
+    const pool = await searchRestaurants(coords.lat, coords.lng, band, category);
 
     if (pool.length === 0) {
       const response: RecommendResponseBody = { restaurants: [], usedFallback, empty: true };
