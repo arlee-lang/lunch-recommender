@@ -92,7 +92,13 @@ async function fetchCategoryPage(
   return { documents: data.documents, isEnd: data.meta.is_end };
 }
 
-export function parseCategoryGroup(categoryRaw: string): CategoryGroup {
+export function parseCategoryGroup(categoryRaw: string, placeName: string): CategoryGroup {
+  // Kakao has no official "채식" category — real signal is the 두부전문점
+  // subcategory (a genuine 한식 sub-tag) plus literal 비건/채식 in the name.
+  // (Kakao's keyword-search for "채식"/"비건" is noisy — mostly unrelated
+  // businesses — so this checks structured category text and the name directly.)
+  if (categoryRaw.includes("두부") || placeName.includes("비건") || placeName.includes("채식"))
+    return "채식";
   if (categoryRaw.includes("한식")) return "한식";
   if (categoryRaw.includes("중식") || categoryRaw.includes("중국음식")) return "중식";
   if (categoryRaw.includes("양식") || categoryRaw.includes("패밀리레스토랑") || categoryRaw.includes("이탈리안"))
@@ -134,7 +140,7 @@ export async function searchRestaurants(
       if (seen.has(doc.id)) continue;
       seen.add(doc.id);
 
-      const group = parseCategoryGroup(doc.category_name);
+      const group = parseCategoryGroup(doc.category_name, doc.place_name);
       if (categorySelection !== "아무거나" && group !== categorySelection) continue;
 
       // Kakao returns an empty distance string (not a missing field) when x/y
@@ -161,8 +167,13 @@ export async function searchRestaurants(
 
   // Kakao files 음식점 under FD6 but cafes under their own CE7 group — a plain
   // FD6 search almost never surfaces cafes, so "카페"/"아무거나" need both.
+  // "채식" also needs both since a vegan spot could be filed as a cafe (CE7).
   const categoryGroupCodes =
-    categorySelection === "카페" ? ["CE7"] : categorySelection === "아무거나" ? ["FD6", "CE7"] : ["FD6"];
+    categorySelection === "카페"
+      ? ["CE7"]
+      : categorySelection === "아무거나" || categorySelection === "채식"
+        ? ["FD6", "CE7"]
+        : ["FD6"];
 
   if (band.min === 0) {
     for (const code of categoryGroupCodes) {
