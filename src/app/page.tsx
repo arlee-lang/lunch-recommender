@@ -9,8 +9,8 @@ type Phase = "idle" | "loading" | "result" | "empty" | "error";
 
 const DISTANCE_OPTIONS: { value: WalkMinutes; sub: string }[] = [
   { value: 5, sub: "~350m" },
-  { value: 10, sub: "~700m" },
-  { value: 15, sub: "~1000m" },
+  { value: 10, sub: "350~700m" },
+  { value: 15, sub: "700m~1km" },
 ];
 
 const CATEGORY_OPTIONS: { value: CategoryGroup; sub: string }[] = [
