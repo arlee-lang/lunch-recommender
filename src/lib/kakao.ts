@@ -68,10 +68,11 @@ async function fetchCategoryPage(
   lat: number,
   lng: number,
   page: number,
+  categoryGroupCode: string,
   extraParams: Record<string, string>
 ): Promise<{ documents: KakaoCategoryDocument[]; isEnd: boolean }> {
   const url = new URL("https://dapi.kakao.com/v2/local/search/category.json");
-  url.searchParams.set("category_group_code", "FD6");
+  url.searchParams.set("category_group_code", categoryGroupCode);
   url.searchParams.set("x", String(lng));
   url.searchParams.set("y", String(lat));
   url.searchParams.set("sort", "distance");
@@ -92,21 +93,13 @@ async function fetchCategoryPage(
 }
 
 export function parseCategoryGroup(categoryRaw: string): CategoryGroup {
-  if (categoryRaw.includes("돈까스") || categoryRaw.includes("우동")) return "기타";
-  if (
-    categoryRaw.includes("한식") ||
-    categoryRaw.includes("육류,고기") ||
-    categoryRaw.includes("국수") ||
-    categoryRaw.includes("찌개,전골")
-  )
-    return "한식";
+  if (categoryRaw.includes("한식")) return "한식";
   if (categoryRaw.includes("중식") || categoryRaw.includes("중국음식")) return "중식";
-  if (
-    categoryRaw.includes("양식") ||
-    categoryRaw.includes("패밀리레스토랑") ||
-    categoryRaw.includes("이탈리안")
-  )
+  if (categoryRaw.includes("양식") || categoryRaw.includes("패밀리레스토랑") || categoryRaw.includes("이탈리안"))
     return "양식";
+  if (categoryRaw.includes("일식")) return "일식";
+  if (categoryRaw.includes("분식")) return "분식";
+  if (categoryRaw.includes("카페")) return "카페";
   return "기타";
 }
 
@@ -166,21 +159,30 @@ export async function searchRestaurants(
     }
   };
 
+  // Kakao files 음식점 under FD6 but cafes under their own CE7 group — a plain
+  // FD6 search almost never surfaces cafes, so "카페"/"아무거나" need both.
+  const categoryGroupCodes =
+    categorySelection === "카페" ? ["CE7"] : categorySelection === "아무거나" ? ["FD6", "CE7"] : ["FD6"];
+
   if (band.min === 0) {
-    for (let page = 1; page <= 3; page++) {
-      const { documents, isEnd } = await fetchCategoryPage(lat, lng, page, {
-        radius: String(band.max),
-      });
-      collect(documents);
-      if (isEnd) break;
+    for (const code of categoryGroupCodes) {
+      for (let page = 1; page <= 3; page++) {
+        const { documents, isEnd } = await fetchCategoryPage(lat, lng, page, code, {
+          radius: String(band.max),
+        });
+        collect(documents);
+        if (isEnd) break;
+      }
     }
   } else {
     const rects = buildAnnulusRects(lat, lng, band.min, band.max);
-    for (const rect of rects) {
-      for (let page = 1; page <= 2; page++) {
-        const { documents, isEnd } = await fetchCategoryPage(lat, lng, page, { rect });
-        collect(documents);
-        if (isEnd) break;
+    for (const code of categoryGroupCodes) {
+      for (const rect of rects) {
+        for (let page = 1; page <= 2; page++) {
+          const { documents, isEnd } = await fetchCategoryPage(lat, lng, page, code, { rect });
+          collect(documents);
+          if (isEnd) break;
+        }
       }
     }
   }

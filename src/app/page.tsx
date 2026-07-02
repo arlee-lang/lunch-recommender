@@ -17,7 +17,9 @@ const CATEGORY_OPTIONS: { value: CategorySelection; sub: string }[] = [
   { value: "한식", sub: "밥·면·고기" },
   { value: "중식", sub: "짜장·짬뽕" },
   { value: "양식", sub: "파스타·스테이크" },
-  { value: "기타", sub: "일식·분식·카페" },
+  { value: "일식", sub: "초밥·라멘·돈까스" },
+  { value: "분식", sub: "떡볶이·김밥" },
+  { value: "카페", sub: "커피·디저트" },
   { value: "아무거나", sub: "전체 다 보기" },
 ];
 
