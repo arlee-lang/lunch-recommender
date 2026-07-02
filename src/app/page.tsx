@@ -122,13 +122,8 @@ export default function Home() {
         }}
       />
       <div className="relative mx-auto max-w-[1000px]">
-        {/* top nav */}
-        <div className="flex items-center py-2">
-          <span className="text-[18px] font-semibold tracking-[-0.3px] text-[#0a0a0a]">점심추천</span>
-        </div>
-
         {/* hero */}
-        <div className="relative py-12">
+        <div className="relative pb-12 pt-10">
           <span
             className="pointer-events-none absolute -left-2 -top-4 text-[34px] text-[#b8a4ed] sm:text-[42px]"
             style={{ transform: "rotate(-18deg)" }}

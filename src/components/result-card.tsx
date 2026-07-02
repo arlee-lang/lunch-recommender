@@ -48,7 +48,7 @@ export function ResultCard({ restaurant, rank, priceFilterActive }: ResultCardPr
           </span>
           {restaurant.lunchHoursStatus === "unknown" && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#fff4de] px-2.5 py-1 text-[12px] font-medium text-[#a06a00]">
-              ⏰ 영업시간 미확인
+              ⏰ 운영시간 확인필요
             </span>
           )}
           {priceText && (
