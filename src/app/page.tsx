@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { CategorySelection, Restaurant, WalkMinutes } from "@/lib/types";
 import { SelectChip } from "@/components/select-chip";
 import { ResultCard } from "@/components/result-card";
@@ -101,34 +100,30 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fffaf0] px-4 pb-16 pt-6">
-      <div className="mx-auto max-w-[1000px]">
+    <div className="relative min-h-screen overflow-hidden bg-[#fffaf0] px-4 pb-16 pt-6">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.12]"
+        style={{
+          backgroundImage: "url('/food-illustrations.jpg')",
+          backgroundRepeat: "repeat",
+          backgroundSize: "220px 220px",
+        }}
+      />
+      <div className="relative mx-auto max-w-[1000px]">
         {/* top nav */}
         <div className="flex items-center py-2">
           <span className="text-[18px] font-semibold tracking-[-0.3px] text-[#0a0a0a]">점심추천</span>
         </div>
 
         {/* hero */}
-        <div className="flex flex-wrap items-center gap-8 py-10">
-          <div className="min-w-[280px] flex-1">
-            <h1 className="text-[40px] font-medium leading-[1.1] tracking-[-1px] text-[#0a0a0a] sm:text-[56px] sm:tracking-[-2px]">
-              오늘 뭐 먹지?
-            </h1>
-            <p className="mt-3 max-w-[440px] text-[16px] leading-relaxed text-[#3a3a3a]">
-              거리랑 메뉴만 고르면, 내 위치(또는 사무실) 근처 식당 3곳을 바로 뽑아드려요. 논의 끝,
-              클릭 두 번.
-            </p>
-          </div>
-          <div className="flex-none overflow-hidden rounded-[24px] bg-[#faf5e8] p-4">
-            <Image
-              src="/food-illustrations.jpg"
-              alt="맛있는 음식 일러스트"
-              width={224}
-              height={224}
-              className="rounded-[16px]"
-              priority
-            />
-          </div>
+        <div className="py-10">
+          <h1 className="text-[40px] font-medium leading-[1.1] tracking-[-1px] text-[#0a0a0a] sm:text-[56px] sm:tracking-[-2px]">
+            오늘 뭐 먹지?
+          </h1>
+          <p className="mt-3 max-w-[440px] text-[16px] leading-relaxed text-[#3a3a3a]">
+            거리랑 메뉴만 고르면, 내 위치(또는 사무실) 근처 식당 3곳을 바로 뽑아드려요. 논의 끝, 클릭
+            두 번.
+          </p>
         </div>
 
         {/* body split */}
