@@ -395,7 +395,7 @@ export default function Home() {
             </span>
             <span className="text-[12px] text-[#9a9a9a]">데이터 출처: 카카오맵 로컬 API</span>
           </div>
-          <span className="text-[12px] text-[#9a9a9a]">© 2026 동대입구 점심추천기 · 종이나라빌딩 4F</span>
+          <span className="text-[12px] text-[#9a9a9a]">© 2026 오늘 뭐먹지???? · 종이나라빌딩 4F</span>
         </div>
       </div>
     </div>
