@@ -10,7 +10,7 @@ import {
 } from "@/lib/types";
 
 const VALID_WALK_MINUTES: WalkMinutes[] = [5, 10, 15];
-const VALID_CATEGORIES: CategorySelection[] = ["한식", "중식", "양식", "기타", "아무거나"];
+const VALID_CATEGORIES: CategorySelection[] = ["한식", "중식", "양식", "일식", "분식", "카페", "아무거나"];
 
 // Bounds how many Places API calls one "추천받기" click can spend — we only
 // need 3 final picks, not a lunch-hours check on the whole candidate pool.

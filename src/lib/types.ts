@@ -1,4 +1,6 @@
-export type CategoryGroup = "한식" | "중식" | "양식" | "기타";
+export type CategoryGroup = "한식" | "중식" | "양식" | "일식" | "분식" | "카페" | "기타";
+// "기타" isn't user-selectable — it's an internal bucket for places that don't
+// match any named group (bars, buffets, fast food, ...), only surfaced via "아무거나".
 export type CategorySelection = CategoryGroup | "아무거나";
 export type WalkMinutes = 5 | 10 | 15;
 
