@@ -385,6 +385,24 @@ export default function Home() {
               </div>
 
               <a
+                href="https://www.instagram.com/imi.coffee/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-white p-6 text-center no-underline transition-colors hover:bg-[#faf5e8]"
+              >
+                <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-[#9a9a9a]">Ad</div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/imi-coffee.jpg"
+                  alt="IMI COFFEE"
+                  className="mx-auto mt-3 h-20 w-20 rounded-full object-cover"
+                />
+                <div className="mt-3 text-[13px] leading-relaxed text-[#6a6a6a]">
+                  이미커피 인스타그램 보러가기 ↗
+                </div>
+              </a>
+
+              <a
                 href={`mailto:arom@kakao.com?subject=${encodeURIComponent(
                   "[오늘 뭐먹지????] 배너 광고 문의"
                 )}&body=${encodeURIComponent(
