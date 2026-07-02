@@ -118,11 +118,60 @@ export default function Home() {
         </div>
 
         {/* hero */}
-        <div className="py-10">
-          <h1 className="text-[40px] font-medium leading-[1.1] tracking-[-1px] text-[#0a0a0a] sm:text-[56px] sm:tracking-[-2px]">
-            오늘 뭐 먹지?
-          </h1>
-          <p className="mt-3 max-w-[440px] text-[16px] leading-relaxed text-[#3a3a3a]">
+        <div className="relative py-12">
+          <span
+            className="pointer-events-none absolute -left-2 -top-4 text-[34px] text-[#b8a4ed] sm:text-[42px]"
+            style={{ transform: "rotate(-18deg)" }}
+          >
+            ★
+          </span>
+          <span
+            className="pointer-events-none absolute left-[150px] -top-2 text-[26px] font-black text-[#ff6b5a] sm:left-[210px]"
+            style={{ transform: "rotate(10deg)" }}
+          >
+            !
+          </span>
+          <span
+            className="pointer-events-none absolute -right-1 top-0 text-[30px] text-[#e8b94a] sm:text-[36px]"
+            style={{ transform: "rotate(14deg)" }}
+          >
+            ✦
+          </span>
+          <span
+            className="pointer-events-none absolute bottom-8 left-[80px] text-[20px] text-[#1a3a3a] sm:left-[120px]"
+            style={{ transform: "rotate(-10deg)" }}
+          >
+            ●
+          </span>
+          <span
+            className="pointer-events-none absolute -bottom-2 right-8 text-[24px] text-[#ffb084] sm:right-16"
+            style={{ transform: "rotate(-16deg)" }}
+          >
+            ★
+          </span>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className="inline-block rounded-[10px] bg-white px-4 py-2 text-[34px] font-black tracking-[-1px] text-[#0a0a0a] shadow-[0_3px_0_rgba(10,10,10,0.08)] sm:text-[48px]"
+              style={{ transform: "rotate(-3deg)" }}
+            >
+              오늘
+            </span>
+            <span
+              className="inline-block rounded-[10px] bg-white px-4 py-2 text-[34px] font-black tracking-[-1px] text-[#0a0a0a] shadow-[0_3px_0_rgba(10,10,10,0.08)] sm:text-[48px]"
+              style={{ transform: "rotate(2deg)" }}
+            >
+              뭐
+            </span>
+            <span
+              className="inline-block rounded-[10px] bg-white px-4 py-2 text-[34px] font-black tracking-[-1px] text-[#0a0a0a] shadow-[0_3px_0_rgba(10,10,10,0.08)] sm:text-[48px]"
+              style={{ transform: "rotate(-2deg)" }}
+            >
+              먹지?
+            </span>
+          </div>
+
+          <p className="relative mt-5 max-w-[440px] text-[16px] leading-relaxed text-[#3a3a3a]">
             거리랑 메뉴만 고르면, 내 위치(또는 사무실) 근처 식당 3곳을 바로 뽑아드려요. 논의 끝, 클릭
             두 번.
           </p>
