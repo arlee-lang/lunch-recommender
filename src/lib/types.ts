@@ -1,4 +1,5 @@
 export type CategoryGroup = "한식" | "중식" | "양식" | "기타";
+export type CategorySelection = CategoryGroup | "아무거나";
 export type WalkMinutes = 5 | 10 | 15;
 
 export interface Restaurant {
@@ -21,7 +22,7 @@ export interface RecommendRequestBody {
   lat?: number;
   lng?: number;
   walkMinutes: WalkMinutes;
-  category: CategoryGroup;
+  category: CategorySelection;
   excludeIds?: string[];
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CategoryGroup, Restaurant, WalkMinutes } from "@/lib/types";
+import Image from "next/image";
+import { CategorySelection, Restaurant, WalkMinutes } from "@/lib/types";
 import { SelectChip } from "@/components/select-chip";
 import { ResultCard } from "@/components/result-card";
 
@@ -13,11 +14,12 @@ const DISTANCE_OPTIONS: { value: WalkMinutes; sub: string }[] = [
   { value: 15, sub: "700m~1km" },
 ];
 
-const CATEGORY_OPTIONS: { value: CategoryGroup; sub: string }[] = [
+const CATEGORY_OPTIONS: { value: CategorySelection; sub: string }[] = [
   { value: "한식", sub: "밥·면·고기" },
   { value: "중식", sub: "짜장·짬뽕" },
   { value: "양식", sub: "파스타·스테이크" },
   { value: "기타", sub: "일식·분식·카페" },
+  { value: "아무거나", sub: "전체 다 보기" },
 ];
 
 function getCurrentPosition(): Promise<{ lat: number; lng: number } | null> {
@@ -55,7 +57,7 @@ function getCurrentPosition(): Promise<{ lat: number; lng: number } | null> {
 
 export default function Home() {
   const [walkMinutes, setWalkMinutes] = useState<WalkMinutes | null>(null);
-  const [category, setCategory] = useState<CategoryGroup | null>(null);
+  const [category, setCategory] = useState<CategorySelection | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [usedFallback, setUsedFallback] = useState(false);
@@ -102,22 +104,31 @@ export default function Home() {
     <div className="min-h-screen bg-[#fffaf0] px-4 pb-16 pt-6">
       <div className="mx-auto max-w-[1000px]">
         {/* top nav */}
-        <div className="flex items-center justify-between py-2">
+        <div className="flex items-center py-2">
           <span className="text-[18px] font-semibold tracking-[-0.3px] text-[#0a0a0a]">점심추천</span>
-          <span className="rounded-full bg-[#f5f0e0] px-3 py-1 text-[12px] font-medium text-[#3a3a3a]">
-            동대입구역
-          </span>
         </div>
 
         {/* hero */}
-        <div className="py-10">
-          <h1 className="text-[40px] font-medium leading-[1.1] tracking-[-1px] text-[#0a0a0a] sm:text-[56px] sm:tracking-[-2px]">
-            오늘 뭐 먹지?
-          </h1>
-          <p className="mt-3 max-w-[440px] text-[16px] leading-relaxed text-[#3a3a3a]">
-            거리랑 메뉴만 고르면, 내 위치(또는 사무실) 근처 식당 3곳을 바로 뽑아드려요. 논의 끝, 클릭
-            두 번.
-          </p>
+        <div className="flex flex-wrap items-center gap-8 py-10">
+          <div className="min-w-[280px] flex-1">
+            <h1 className="text-[40px] font-medium leading-[1.1] tracking-[-1px] text-[#0a0a0a] sm:text-[56px] sm:tracking-[-2px]">
+              오늘 뭐 먹지?
+            </h1>
+            <p className="mt-3 max-w-[440px] text-[16px] leading-relaxed text-[#3a3a3a]">
+              거리랑 메뉴만 고르면, 내 위치(또는 사무실) 근처 식당 3곳을 바로 뽑아드려요. 논의 끝,
+              클릭 두 번.
+            </p>
+          </div>
+          <div className="flex-none overflow-hidden rounded-[24px] bg-[#faf5e8] p-4">
+            <Image
+              src="/food-illustrations.jpg"
+              alt="맛있는 음식 일러스트"
+              width={224}
+              height={224}
+              className="rounded-[16px]"
+              priority
+            />
+          </div>
         </div>
 
         {/* body split */}

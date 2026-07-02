@@ -1,4 +1,4 @@
-import { CategoryGroup, Restaurant } from "./types";
+import { CategoryGroup, CategorySelection, Restaurant } from "./types";
 
 const OFFICE_ADDRESS = "서울특별시 중구 장충단로 166 종이나라빌딩 4층";
 const WALK_METERS_PER_MINUTE = 67;
@@ -131,7 +131,7 @@ export async function searchRestaurants(
   lat: number,
   lng: number,
   band: { min: number; max: number },
-  categoryGroup: CategoryGroup
+  categorySelection: CategorySelection
 ): Promise<Restaurant[]> {
   const results: Restaurant[] = [];
   const seen = new Set<string>();
@@ -142,7 +142,7 @@ export async function searchRestaurants(
       seen.add(doc.id);
 
       const group = parseCategoryGroup(doc.category_name);
-      if (group !== categoryGroup) continue;
+      if (categorySelection !== "아무거나" && group !== categorySelection) continue;
 
       // Kakao returns an empty distance string (not a missing field) when x/y
       // fall outside any real radius/rect match, instead of an empty list.
