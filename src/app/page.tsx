@@ -367,12 +367,6 @@ export default function Home() {
                         </span>
                       </div>
                     )}
-                    <div className="mb-2.5 flex items-center gap-2 rounded-[3px] border-l-4 border-l-[#8a8fb0] bg-white px-2.5 py-2">
-                      <span className="text-[15px]">⏰</span>
-                      <span className="text-[11px] leading-snug text-[#21242e]">
-                        영업시간 정보는 제공되지 않아요. 방문 전 카카오맵 링크에서 점심시간(11~14시) 영업 여부를 꼭 확인해주세요.
-                      </span>
-                    </div>
                     <div className="flex flex-col gap-2">
                       {restaurants.map((r, i) => (
                         <ResultCard key={r.id} restaurant={r} rank={i + 1} />

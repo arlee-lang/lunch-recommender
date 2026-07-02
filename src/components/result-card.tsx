@@ -38,6 +38,11 @@ export function ResultCard({ restaurant, rank }: ResultCardProps) {
           <span className="font-[family-name:var(--font-silkscreen)] text-[10px] text-[#5a5f8c]">
             {restaurant.distance_m}m
           </span>
+          {restaurant.lunchHoursStatus === "unknown" && (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-[#fff4de] px-1.5 py-0.5 text-[10px] font-bold text-[#a06a00]">
+              ⏰ 영업시간 미확인
+            </span>
+          )}
         </div>
         <div className="mt-1.5 flex gap-1.5">
           <a

@@ -24,6 +24,8 @@ interface KakaoCategoryDocument {
   road_address_name: string;
   phone: string;
   place_url: string;
+  x: string;
+  y: string;
 }
 
 function kakaoHeaders() {
@@ -155,6 +157,8 @@ export async function searchRestaurants(
         category_group: group,
         distance_m: distanceM,
         walk_minutes: Math.max(1, Math.round(distanceM / WALK_METERS_PER_MINUTE)),
+        lat: Number(doc.y),
+        lng: Number(doc.x),
         road_address: doc.road_address_name || undefined,
         phone: doc.phone || undefined,
         kakao_map_url: doc.place_url,
@@ -183,12 +187,4 @@ export async function searchRestaurants(
   }
 
   return results;
-}
-
-export function pickRandomThree(pool: Restaurant[], excludeIds: string[]): Restaurant[] {
-  let avail = pool.filter((r) => !excludeIds.includes(r.id));
-  if (avail.length < 3) avail = pool;
-
-  const shuffled = [...avail].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(3, shuffled.length));
 }

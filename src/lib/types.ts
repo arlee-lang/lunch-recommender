@@ -8,10 +8,14 @@ export interface Restaurant {
   category_group: CategoryGroup;
   distance_m: number;
   walk_minutes: number;
+  lat: number;
+  lng: number;
   road_address?: string;
   phone?: string;
   kakao_map_url: string;
   naver_map_url: string;
+  // Populated only after the lunch-hours check; absent on raw Kakao candidates.
+  lunchHoursStatus?: "open" | "unknown";
 }
 
 export interface RecommendRequestBody {
