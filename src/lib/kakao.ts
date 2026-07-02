@@ -162,7 +162,6 @@ export async function searchRestaurants(
         road_address: doc.road_address_name || undefined,
         phone: doc.phone || undefined,
         kakao_map_url: doc.place_url,
-        naver_map_url: `https://map.naver.com/v5/search/${encodeURIComponent(doc.place_name)}`,
       });
     }
   };

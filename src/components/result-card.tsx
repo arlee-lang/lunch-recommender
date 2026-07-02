@@ -44,17 +44,9 @@ export function ResultCard({ restaurant, rank }: ResultCardProps) {
             href={restaurant.kakao_map_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[36px] items-center rounded-[12px] bg-[#f7e600] px-3 text-[13px] font-semibold text-[#0a0a0a] no-underline"
+            className="inline-flex min-h-[36px] items-center rounded-[12px] bg-[#f7e600] px-4 text-[13px] font-semibold text-[#0a0a0a] no-underline"
           >
-            카카오맵 ↗
-          </a>
-          <a
-            href={restaurant.naver_map_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[36px] items-center rounded-[12px] bg-[#03c75a] px-3 text-[13px] font-semibold text-white no-underline"
-          >
-            네이버맵 ↗
+            카카오맵에서 보기 ↗
           </a>
         </div>
       </div>
