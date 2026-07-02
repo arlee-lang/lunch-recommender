@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Silkscreen } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const archivoBlack = Archivo_Black({
-  variable: "--font-archivo-black",
-  weight: "400",
-  subsets: ["latin"],
-});
-
-const silkscreen = Silkscreen({
-  variable: "--font-silkscreen",
-  weight: ["400", "700"],
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -25,10 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ko"
-      className={`${archivoBlack.variable} ${silkscreen.variable} h-full antialiased`}
-    >
+    <html lang="ko" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

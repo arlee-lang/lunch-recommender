@@ -13,14 +13,14 @@ export function SelectChip({ label, sub, selected, onClick }: SelectChipProps) {
       type="button"
       onClick={onClick}
       className={
-        "flex min-w-[84px] min-h-[44px] flex-col items-start gap-0.5 rounded-sm px-3.5 py-2 text-left " +
+        "flex min-w-[92px] min-h-[52px] flex-col items-start justify-center gap-0.5 rounded-full px-4 py-2 text-left transition-colors " +
         (selected
-          ? "bg-[#f68d1f] text-white border-t border-[#ffcf9b] border-b-[3px] border-b-[#b5610a] border-x border-x-[#d97516] shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)]"
-          : "bg-[#dedede] text-[#21242e] border-t border-white border-b-2 border-b-[#3d4f97] border-x border-x-[#b7bcd6]")
+          ? "bg-[#0a0a0a] text-white"
+          : "border border-[#e5e5e5] bg-transparent text-[#3a3a3a] hover:bg-[#faf5e8]")
       }
     >
-      <span className="text-[13px] font-bold">{label}</span>
-      <span className="font-[family-name:var(--font-silkscreen)] text-[9px] font-normal opacity-80">
+      <span className="text-[14px] font-semibold leading-tight">{label}</span>
+      <span className={"text-[11px] leading-tight " + (selected ? "text-white/70" : "text-[#9a9a9a]")}>
         {sub}
       </span>
     </button>
