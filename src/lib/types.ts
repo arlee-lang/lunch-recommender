@@ -1,0 +1,29 @@
+export type CategoryGroup = "한식" | "중식" | "양식" | "기타";
+export type WalkMinutes = 5 | 10 | 15;
+
+export interface Restaurant {
+  id: string;
+  name: string;
+  category_raw: string;
+  category_group: CategoryGroup;
+  distance_m: number;
+  walk_minutes: number;
+  road_address?: string;
+  phone?: string;
+  kakao_map_url: string;
+  naver_map_url: string;
+}
+
+export interface RecommendRequestBody {
+  lat?: number;
+  lng?: number;
+  walkMinutes: WalkMinutes;
+  category: CategoryGroup;
+  excludeIds?: string[];
+}
+
+export interface RecommendResponseBody {
+  restaurants: Restaurant[];
+  usedFallback: boolean;
+  empty: boolean;
+}
