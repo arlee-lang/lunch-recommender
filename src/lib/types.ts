@@ -3,6 +3,7 @@ export type CategoryGroup = "한식" | "중식" | "양식" | "일식" | "분식"
 // match any named group (bars, buffets, fast food, ...), only surfaced via "아무거나".
 export type CategorySelection = CategoryGroup | "아무거나";
 export type WalkMinutes = 5 | 10 | 15;
+export type PriceTier = "under10k" | "10to15k" | "15to20k" | "over20k";
 
 export interface Restaurant {
   id: string;
@@ -16,8 +17,10 @@ export interface Restaurant {
   road_address?: string;
   phone?: string;
   kakao_map_url: string;
-  // Populated only after the lunch-hours check; absent on raw Kakao candidates.
+  // Populated only after the lunch-hours/price check; absent on raw Kakao candidates.
   lunchHoursStatus?: "open" | "unknown";
+  priceMin?: number;
+  priceMax?: number;
 }
 
 export interface RecommendRequestBody {
@@ -25,6 +28,7 @@ export interface RecommendRequestBody {
   lng?: number;
   walkMinutes: WalkMinutes;
   category: CategorySelection;
+  priceTier?: PriceTier;
   excludeIds?: string[];
 }
 

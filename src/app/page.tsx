@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CategorySelection, Restaurant, WalkMinutes } from "@/lib/types";
+import { CategorySelection, PriceTier, Restaurant, WalkMinutes } from "@/lib/types";
 import { SelectChip } from "@/components/select-chip";
 import { ResultCard } from "@/components/result-card";
 
@@ -21,6 +21,13 @@ const CATEGORY_OPTIONS: { value: CategorySelection; sub: string }[] = [
   { value: "분식", sub: "떡볶이·김밥" },
   { value: "카페", sub: "커피·디저트" },
   { value: "아무거나", sub: "전체 다 보기" },
+];
+
+const PRICE_OPTIONS: { value: PriceTier; label: string; sub: string }[] = [
+  { value: "under10k", label: "1만원 이하", sub: "가성비" },
+  { value: "10to15k", label: "1만~1.5만원", sub: "무난하게" },
+  { value: "15to20k", label: "1.5만~2만원", sub: "든든하게" },
+  { value: "over20k", label: "2만원 이상", sub: "제대로" },
 ];
 
 function getCurrentPosition(): Promise<{ lat: number; lng: number } | null> {
@@ -59,6 +66,7 @@ function getCurrentPosition(): Promise<{ lat: number; lng: number } | null> {
 export default function Home() {
   const [walkMinutes, setWalkMinutes] = useState<WalkMinutes | null>(null);
   const [category, setCategory] = useState<CategorySelection | null>(null);
+  const [priceTier, setPriceTier] = useState<PriceTier | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [usedFallback, setUsedFallback] = useState(false);
@@ -80,6 +88,7 @@ export default function Home() {
           ...(coords ?? {}),
           walkMinutes,
           category,
+          ...(priceTier ? { priceTier } : {}),
           excludeIds: lastIds,
         }),
       });
@@ -215,6 +224,21 @@ export default function Home() {
                 ))}
               </div>
 
+              <div className="my-5 h-px bg-[#e5e5e5]" />
+
+              <div className="text-[14px] font-semibold text-[#0a0a0a]">💰 가격대 (선택)</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PRICE_OPTIONS.map((opt) => (
+                  <SelectChip
+                    key={opt.value}
+                    label={opt.label}
+                    sub={opt.sub}
+                    selected={priceTier === opt.value}
+                    onClick={() => setPriceTier(priceTier === opt.value ? null : opt.value)}
+                  />
+                ))}
+              </div>
+
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -318,7 +342,12 @@ export default function Home() {
                     )}
                     <div className="flex flex-col gap-3">
                       {restaurants.map((r, i) => (
-                        <ResultCard key={r.id} restaurant={r} rank={i + 1} />
+                        <ResultCard
+                          key={r.id}
+                          restaurant={r}
+                          rank={i + 1}
+                          priceFilterActive={priceTier !== null}
+                        />
                       ))}
                     </div>
                   </>
