@@ -23,8 +23,14 @@ function formatPrice(min?: number, max?: number): string | null {
   return min === max ? `${fmt(min)}원` : `${fmt(min)}~${fmt(max)}원`;
 }
 
+function formatRating(rating?: number, count?: number): string | null {
+  if (rating === undefined) return null;
+  return count !== undefined ? `${rating.toFixed(1)} (${count.toLocaleString("ko-KR")})` : rating.toFixed(1);
+}
+
 export function ResultCard({ restaurant, rank, priceFilterActive }: ResultCardProps) {
   const priceText = formatPrice(restaurant.priceMin, restaurant.priceMax);
+  const ratingText = formatRating(restaurant.rating, restaurant.userRatingCount);
 
   return (
     <div className="flex items-stretch gap-3 rounded-[16px] border border-[#e5e5e5] bg-white px-4 py-4">
@@ -43,6 +49,11 @@ export function ResultCard({ restaurant, rank, priceFilterActive }: ResultCardPr
         </div>
         <div className="mt-1 text-[13px] leading-snug text-[#6a6a6a]">{restaurant.category_raw}</div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {ratingText && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#fff4de] px-2.5 py-1 text-[12px] font-medium text-[#a06a00]">
+              ⭐ {ratingText}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 rounded-full bg-[#faf5e8] px-2.5 py-1 text-[12px] font-medium text-[#3a3a3a]">
             🚶 도보 {restaurant.walk_minutes}분 · {restaurant.distance_m}m
           </span>

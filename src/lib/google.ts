@@ -1,7 +1,12 @@
 import { PriceTier } from "./types";
 
 const MATCH_DISTANCE_TOLERANCE_M = 300;
-const CACHE_TTL_MS = 5 * 60 * 1000; // openNow can flip within the hour, unlike price/name
+// 30 minutes, not 5: this is a lunch-decision tool, not a live status board —
+// openNow being a few minutes stale is a non-issue, and rating is one of the
+// pricier ("Enterprise" SKU) Places fields, so a longer TTL meaningfully cuts
+// repeat-lookup cost for restaurants that keep showing up across colleagues'
+// clicks during the same lunch window.
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export const PRICE_TIER_RANGES: Record<PriceTier, { min: number; max: number }> = {
   under10k: { min: 0, max: 10000 },
@@ -25,6 +30,8 @@ interface GooglePlace {
   location?: { latitude: number; longitude: number };
   regularOpeningHours?: { openNow?: boolean };
   priceRange?: GooglePriceRange;
+  rating?: number;
+  userRatingCount?: number;
 }
 
 // "open" / "closed" reflect real-time status (Google's own openNow), not a
@@ -35,13 +42,16 @@ export interface PlaceDetails {
   lunchStatus: LunchStatus;
   priceMin: number | null;
   priceMax: number | null;
+  rating: number | null;
+  userRatingCount: number | null;
 }
 
 function googleHeaders() {
   return {
     "Content-Type": "application/json",
     "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API_KEY ?? "",
-    "X-Goog-FieldMask": "places.id,places.location,places.regularOpeningHours.openNow,places.priceRange",
+    "X-Goog-FieldMask":
+      "places.id,places.location,places.regularOpeningHours.openNow,places.priceRange,places.rating,places.userRatingCount",
   };
 }
 
@@ -87,7 +97,13 @@ export async function checkPlaceDetails(
   const cached = placeDetailsCache.get(id);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.details;
 
-  let details: PlaceDetails = { lunchStatus: "unknown", priceMin: null, priceMax: null };
+  let details: PlaceDetails = {
+    lunchStatus: "unknown",
+    priceMin: null,
+    priceMax: null,
+    rating: null,
+    userRatingCount: null,
+  };
   try {
     const place = await findGooglePlace(name, lat, lng);
     if (place?.location) {
@@ -101,11 +117,17 @@ export async function checkPlaceDetails(
         const priceMin = startUnits !== undefined ? Number(startUnits) : null;
         const priceMax = endUnits !== undefined ? Number(endUnits) : null;
 
-        details = { lunchStatus, priceMin, priceMax };
+        details = {
+          lunchStatus,
+          priceMin,
+          priceMax,
+          rating: place.rating ?? null,
+          userRatingCount: place.userRatingCount ?? null,
+        };
       }
     }
   } catch {
-    details = { lunchStatus: "unknown", priceMin: null, priceMax: null };
+    details = { lunchStatus: "unknown", priceMin: null, priceMax: null, rating: null, userRatingCount: null };
   }
 
   placeDetailsCache.set(id, { details, fetchedAt: Date.now() });

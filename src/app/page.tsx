@@ -7,11 +7,13 @@ import { ResultCard } from "@/components/result-card";
 
 type Phase = "idle" | "loading" | "result" | "empty" | "error";
 
-const DISTANCE_OPTIONS: { value: WalkMinutes; sub: string }[] = [
-  { value: 5, sub: "~350m" },
-  { value: 10, sub: "350~700m" },
-  { value: 15, sub: "700m~1km" },
-];
+// Mirrors WALK_MINUTES_MIN/MAX and WALK_METERS_PER_MINUTE in lib/kakao.ts —
+// duplicated here (rather than imported) so this client component doesn't
+// pull the Kakao API server module into the browser bundle.
+const WALK_MINUTES_MIN = 1;
+const WALK_MINUTES_MAX = 30;
+const WALK_METERS_PER_MINUTE = 67;
+const DEFAULT_WALK_MINUTES = 10;
 
 const CATEGORY_OPTIONS: { value: CategorySelection; label: string; sub: string; accentColor?: string }[] = [
   { value: "한식", label: "🍚 한식", sub: "밥·면·고기" },
@@ -65,18 +67,19 @@ function getCurrentPosition(): Promise<{ lat: number; lng: number } | null> {
 }
 
 export default function Home() {
-  const [walkMinutes, setWalkMinutes] = useState<WalkMinutes | null>(null);
+  const [walkMinutes, setWalkMinutes] = useState<WalkMinutes>(DEFAULT_WALK_MINUTES);
   const [category, setCategory] = useState<CategorySelection | null>(null);
   const [priceTier, setPriceTier] = useState<PriceTier | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [usedFallback, setUsedFallback] = useState(false);
   const [lastIds, setLastIds] = useState<string[]>([]);
+  const [lastWalkMinutes, setLastWalkMinutes] = useState<number | null>(null);
 
-  const canRecommend = walkMinutes !== null && category !== null && phase !== "loading";
+  const canRecommend = category !== null && phase !== "loading";
 
   async function handleRecommend() {
-    if (walkMinutes === null || category === null) return;
+    if (category === null) return;
     setPhase("loading");
 
     const coords = await getCurrentPosition();
@@ -88,6 +91,7 @@ export default function Home() {
         body: JSON.stringify({
           ...(coords ?? {}),
           walkMinutes,
+          ...(lastWalkMinutes !== null ? { previousWalkMinutes: lastWalkMinutes } : {}),
           category,
           ...(priceTier ? { priceTier } : {}),
           excludeIds: lastIds,
@@ -105,6 +109,7 @@ export default function Home() {
       setRestaurants(data.restaurants);
       setUsedFallback(data.usedFallback);
       setLastIds(data.restaurants.map((r: Restaurant) => r.id));
+      setLastWalkMinutes(walkMinutes);
       setPhase("result");
     } catch {
       setPhase("error");
@@ -193,16 +198,36 @@ export default function Home() {
               </div>
 
               <div className="mt-4 text-[14px] font-semibold text-[#0a0a0a]">🚶 걸을 수 있는 거리</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {DISTANCE_OPTIONS.map((opt) => (
-                  <SelectChip
-                    key={opt.value}
-                    label={`도보 ${opt.value}분`}
-                    sub={opt.sub}
-                    selected={walkMinutes === opt.value}
-                    onClick={() => setWalkMinutes(opt.value)}
-                  />
-                ))}
+              <div className="relative mt-8 px-1 py-4">
+                {/* decorative track — the real input below is transparent and
+                    taller, so it can be dragged via the person icon itself */}
+                <div className="h-2 w-full rounded-full bg-[#f5f0e0]" />
+                <div
+                  className="pointer-events-none absolute top-1/2 text-[40px] leading-none"
+                  style={{
+                    left: `${((walkMinutes - WALK_MINUTES_MIN) / (WALK_MINUTES_MAX - WALK_MINUTES_MIN)) * 100}%`,
+                    transform: "translate(-50%, -50%) scaleX(-1)",
+                  }}
+                >
+                  🚶
+                </div>
+                <input
+                  type="range"
+                  min={WALK_MINUTES_MIN}
+                  max={WALK_MINUTES_MAX}
+                  step={1}
+                  value={walkMinutes}
+                  onChange={(e) => setWalkMinutes(Number(e.target.value))}
+                  className="absolute inset-x-0 top-1/2 h-11 w-full -translate-y-1/2 cursor-pointer appearance-none bg-transparent opacity-0"
+                  aria-label="걸을 수 있는 거리 (분)"
+                />
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[12px] text-[#9a9a9a]">{WALK_MINUTES_MIN}분</span>
+                <span className="rounded-full bg-[#faf5e8] px-3 py-1 text-[13px] font-semibold text-[#0a0a0a]">
+                  도보 {walkMinutes}분 · ~{(walkMinutes * WALK_METERS_PER_MINUTE).toLocaleString("ko-KR")}m 이내
+                </span>
+                <span className="text-[12px] text-[#9a9a9a]">{WALK_MINUTES_MAX}분</span>
               </div>
 
               <div className="my-5 h-px bg-[#e5e5e5]" />
@@ -258,7 +283,7 @@ export default function Home() {
                   <span className="text-[15px]">→</span>
                 </button>
                 {!canRecommend && phase !== "loading" && (
-                  <span className="text-[13px] text-[#9a9a9a]">거리와 메뉴를 모두 골라주세요</span>
+                  <span className="text-[13px] text-[#9a9a9a]">먹고 싶은 메뉴를 골라주세요</span>
                 )}
               </div>
             </div>
@@ -286,7 +311,7 @@ export default function Home() {
                     <div className="text-[32px] leading-none">🍜🍚🍝</div>
                     <div className="mt-3 text-[14px] text-[#6a6a6a]">
                       위에서 <b className="text-[#0a0a0a]">거리</b>와 <b className="text-[#0a0a0a]">메뉴</b>를
-                      고르고 <b className="text-[#0a0a0a]">추천받기</b>를 누르세요.
+                      정하고 <b className="text-[#0a0a0a]">추천받기</b>를 누르세요.
                     </div>
                   </div>
                 )}
@@ -359,9 +384,11 @@ export default function Home() {
               <div className="rounded-[24px] bg-[#b8a4ed] p-6">
                 <div className="text-[16px] font-semibold text-[#0a0a0a]">? 어떻게 추천하나요</div>
                 <div className="mt-2 text-[13px] leading-relaxed text-[#0a0a0a]/80">
-                  내 <b>현재 위치</b>(또는 사무실)를 기준으로 반경 안의 식당을 찾아 <b>랜덤 3곳</b>을
-                  뽑아요. 마음에 안 들면 <b>다시 추천</b>을 누르세요 — 방금 나온 곳은 빼고 다시
-                  뽑아드려요.
+                  내 <b>현재 위치</b>(또는 사무실)를 기준으로 반경 안의 식당 중{" "}
+                  <b>평점 4.0 이상인 곳들 중 무작위로 3곳</b>을 뽑아요. 🚶 슬라이더를 오른쪽으로
+                  밀어 거리를 늘리면, 이미 봤던 가까운 구간은 후순위로 미루고 새로 넓어진 구간을
+                  우선 보여드려요. 마음에 안 들면 <b>다시 추천</b>을 누르세요 — 방금 나온 곳은
+                  빼고 다시 뽑아드려요.
                 </div>
               </div>
 

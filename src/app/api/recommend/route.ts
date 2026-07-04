@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { WALK_BAND_METERS, getOfficeFallbackCoords, searchRestaurants } from "@/lib/kakao";
+import {
+  WALK_MINUTES_MAX,
+  WALK_MINUTES_MIN,
+  getOfficeFallbackCoords,
+  metersForWalkMinutes,
+  searchRestaurants,
+} from "@/lib/kakao";
 import { checkPlaceDetails, priceOverlapsTier } from "@/lib/google";
 import {
   CategorySelection,
@@ -7,10 +13,8 @@ import {
   RecommendRequestBody,
   RecommendResponseBody,
   Restaurant,
-  WalkMinutes,
 } from "@/lib/types";
 
-const VALID_WALK_MINUTES: WalkMinutes[] = [5, 10, 15];
 const VALID_CATEGORIES: CategorySelection[] = [
   "한식",
   "중식",
@@ -23,9 +27,48 @@ const VALID_CATEGORIES: CategorySelection[] = [
 ];
 const VALID_PRICE_TIERS: PriceTier[] = ["under10k", "10to15k", "15to20k", "over20k"];
 
-// Bounds how many Places API calls one "추천받기" click can spend — we only
-// need 3 final picks, not a lunch-hours/price check on the whole candidate pool.
+// Hard cap on Places API calls one "추천받기" click can spend. Rating is an
+// "Enterprise"-tier Places field (the priciest, smallest-free-quota SKU), so
+// this loop is written to stop well before this cap whenever possible —
+// see QUALIFYING_POOL_SIZE below.
 const MAX_PLACE_CHECKS = 12;
+
+// A candidate only needs to clear this bar, not win a beauty contest — we no
+// longer rank the whole checked batch by rating and take the top 3, which
+// let us stop checking as soon as we have enough good options instead of
+// always spending the full Places-check budget.
+const RATING_THRESHOLD = 4;
+
+// Stop checking once this many qualifying (rating >= threshold) candidates
+// are found, then pick 3 at random from them — a little buffer beyond 3 so
+// "random 3" isn't just "first 3 found". Keeps the common case well under
+// MAX_PLACE_CHECKS.
+const QUALIFYING_POOL_SIZE = 5;
+
+// Priority zone (farther than the previous walkMinutes, i.e. newly
+// reachable after dragging the slider out) goes first so its candidates are
+// the ones spent against the Places-check budget; within a zone, Kakao's
+// own nearest-first order is kept until we know ratings.
+function orderForChecking(pool: Restaurant[]): Restaurant[] {
+  return [...pool].sort((a, b) => Number(b.priorityZone) - Number(a.priorityZone));
+}
+
+function shuffle<T>(items: T[]): T[] {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+// Fills 3 picks from preference-ordered pools (e.g. priority-zone-and-rated
+// first, down to deprioritized-zone-and-unrated last), randomizing within
+// each pool so results vary between clicks without breaking zone/rating
+// preference across pools.
+function fillThree(pools: Restaurant[][]): Restaurant[] {
+  const result: Restaurant[] = [];
+  for (const pool of pools) {
+    if (result.length >= 3) break;
+    result.push(...shuffle(pool).slice(0, 3 - result.length));
+  }
+  return result;
+}
 
 async function pickThreeMatching(
   pool: Restaurant[],
@@ -35,11 +78,12 @@ async function pickThreeMatching(
   let avail = pool.filter((r) => !excludeIds.includes(r.id));
   if (avail.length < 3) avail = pool;
 
-  const shuffled = [...avail].sort(() => Math.random() - 0.5);
-  const picked: Restaurant[] = [];
+  const ordered = orderForChecking(avail);
+  const qualifying: Restaurant[] = [];
+  const fallback: Restaurant[] = [];
 
-  for (let i = 0; i < shuffled.length && i < MAX_PLACE_CHECKS && picked.length < 3; i++) {
-    const candidate = shuffled[i];
+  for (let i = 0; i < ordered.length && i < MAX_PLACE_CHECKS && qualifying.length < QUALIFYING_POOL_SIZE; i++) {
+    const candidate = ordered[i];
     const details = await checkPlaceDetails(candidate.id, candidate.name, candidate.lat, candidate.lng);
     if (details.lunchStatus === "closed") continue;
 
@@ -47,23 +91,43 @@ async function pickThreeMatching(
       if (!priceOverlapsTier(details.priceMin, details.priceMax, priceTier)) continue;
     }
 
-    picked.push({
+    const withDetails: Restaurant = {
       ...candidate,
       lunchHoursStatus: details.lunchStatus,
       priceMin: details.priceMin ?? undefined,
       priceMax: details.priceMax ?? undefined,
-    });
+      rating: details.rating ?? undefined,
+      userRatingCount: details.userRatingCount ?? undefined,
+    };
+
+    if (details.rating !== null && details.rating >= RATING_THRESHOLD) {
+      qualifying.push(withDetails);
+    } else {
+      fallback.push(withDetails);
+    }
   }
 
-  return picked;
+  const byZone = (items: Restaurant[], zone: boolean) => items.filter((r) => r.priorityZone === zone);
+
+  // Preference order: priority-zone + rated-well first, down to
+  // deprioritized-zone + unrated/low-rated last — only reached if there
+  // weren't enough qualifying candidates to fill 3 on their own.
+  return fillThree([
+    byZone(qualifying, true),
+    byZone(qualifying, false),
+    byZone(fallback, true),
+    byZone(fallback, false),
+  ]);
 }
 
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as RecommendRequestBody;
-  const { lat, lng, walkMinutes, category, priceTier, excludeIds } = body;
+  const { lat, lng, walkMinutes, previousWalkMinutes, category, priceTier, excludeIds } = body;
 
   if (
-    !VALID_WALK_MINUTES.includes(walkMinutes) ||
+    typeof walkMinutes !== "number" ||
+    walkMinutes < WALK_MINUTES_MIN ||
+    walkMinutes > WALK_MINUTES_MAX ||
     !VALID_CATEGORIES.includes(category) ||
     (priceTier !== undefined && !VALID_PRICE_TIERS.includes(priceTier))
   ) {
@@ -81,8 +145,17 @@ export async function POST(req: NextRequest) {
       usedFallback = true;
     }
 
-    const band = WALK_BAND_METERS[walkMinutes];
-    const pool = await searchRestaurants(coords.lat, coords.lng, band, category);
+    const targetMeters = metersForWalkMinutes(walkMinutes);
+    const rawPool = await searchRestaurants(coords.lat, coords.lng, targetMeters, category);
+
+    // Only treat the previous distance as "already seen" when the slider
+    // moved outward — dragging it back in shouldn't deprioritize anything,
+    // since nothing new was revealed.
+    const alreadySeenMeters =
+      typeof previousWalkMinutes === "number" && previousWalkMinutes < walkMinutes
+        ? metersForWalkMinutes(previousWalkMinutes)
+        : 0;
+    const pool: Restaurant[] = rawPool.map((r) => ({ ...r, priorityZone: r.distance_m > alreadySeenMeters }));
 
     if (pool.length === 0) {
       const response: RecommendResponseBody = { restaurants: [], usedFallback, empty: true };
