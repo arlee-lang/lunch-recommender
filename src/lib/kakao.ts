@@ -3,13 +3,30 @@ import { CategoryGroup, CategorySelection, Restaurant } from "./types";
 const OFFICE_ADDRESS = "서울특별시 중구 장충단로 166 종이나라빌딩 4층";
 const WALK_METERS_PER_MINUTE = 67;
 
-// Each walk-minute option is a distinct band, not "within N minutes" —
-// picking 10분 means a 6~10분 walk, not anything closer than that too.
-export const WALK_BAND_METERS: Record<number, { min: number; max: number }> = {
-  5: { min: 0, max: 350 },
-  10: { min: 350, max: 700 },
-  15: { min: 700, max: 1000 },
-};
+// The distance slider's allowed range (걸어가는 사람 아이콘을 오른쪽으로 밀수록
+// 검색 반경이 넓어짐). Kept here so the frontend and the request validator
+// share one source of truth.
+export const WALK_MINUTES_MIN = 1;
+export const WALK_MINUTES_MAX = 30;
+
+export function metersForWalkMinutes(minutes: number): number {
+  return minutes * WALK_METERS_PER_MINUTE;
+}
+
+// Internal search granularity — not user-facing. Each chunk of this width is
+// queried separately (see buildAnnulusRects below for why), then merged.
+const SEARCH_CHUNK_METERS = 350;
+
+function buildChunks(maxM: number): { min: number; max: number }[] {
+  const chunks: { min: number; max: number }[] = [];
+  let lo = 0;
+  while (lo < maxM) {
+    const hi = Math.min(lo + SEARCH_CHUNK_METERS, maxM);
+    chunks.push({ min: lo, max: hi });
+    lo = hi;
+  }
+  return chunks;
+}
 
 interface KakaoAddressDocument {
   x: string;
@@ -126,10 +143,36 @@ export async function getOfficeFallbackCoords(): Promise<{ lat: number; lng: num
   return cachedOfficeCoords;
 }
 
+// One chunk's worth of pages for one category code. Always fetches a fixed
+// number of pages in parallel rather than paging sequentially until
+// `is_end` — with the slider's range now going up to 30분 (many chunks), a
+// sequential is_end-driven crawl would take far too long; firing a bounded,
+// fixed set of requests concurrently keeps wall-clock time low regardless of
+// how many chunks the selected distance requires.
+async function fetchChunkDocuments(
+  lat: number,
+  lng: number,
+  chunk: { min: number; max: number },
+  code: string
+): Promise<KakaoCategoryDocument[]> {
+  if (chunk.min === 0) {
+    const pages = await Promise.all(
+      [1, 2, 3].map((page) => fetchCategoryPage(lat, lng, page, code, { radius: String(chunk.max) }))
+    );
+    return pages.flatMap((p) => p.documents);
+  }
+
+  const rects = buildAnnulusRects(lat, lng, chunk.min, chunk.max);
+  const pages = await Promise.all(
+    rects.flatMap((rect) => [1, 2].map((page) => fetchCategoryPage(lat, lng, page, code, { rect })))
+  );
+  return pages.flatMap((p) => p.documents);
+}
+
 export async function searchRestaurants(
   lat: number,
   lng: number,
-  band: { min: number; max: number },
+  maxM: number,
   categorySelection: CategorySelection
 ): Promise<Restaurant[]> {
   const results: Restaurant[] = [];
@@ -148,7 +191,7 @@ export async function searchRestaurants(
       if (!doc.distance) continue;
 
       const distanceM = Number(doc.distance);
-      if (distanceM > band.max || distanceM <= band.min) continue;
+      if (distanceM > maxM) continue;
       results.push({
         id: doc.id,
         name: doc.place_name,
@@ -175,28 +218,11 @@ export async function searchRestaurants(
         ? ["FD6", "CE7"]
         : ["FD6"];
 
-  if (band.min === 0) {
-    for (const code of categoryGroupCodes) {
-      for (let page = 1; page <= 3; page++) {
-        const { documents, isEnd } = await fetchCategoryPage(lat, lng, page, code, {
-          radius: String(band.max),
-        });
-        collect(documents);
-        if (isEnd) break;
-      }
-    }
-  } else {
-    const rects = buildAnnulusRects(lat, lng, band.min, band.max);
-    for (const code of categoryGroupCodes) {
-      for (const rect of rects) {
-        for (let page = 1; page <= 2; page++) {
-          const { documents, isEnd } = await fetchCategoryPage(lat, lng, page, code, { rect });
-          collect(documents);
-          if (isEnd) break;
-        }
-      }
-    }
-  }
+  const chunks = buildChunks(maxM);
+  const documentBatches = await Promise.all(
+    chunks.flatMap((chunk) => categoryGroupCodes.map((code) => fetchChunkDocuments(lat, lng, chunk, code)))
+  );
+  for (const docs of documentBatches) collect(docs);
 
   return results;
 }
