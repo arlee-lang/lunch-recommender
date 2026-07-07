@@ -76,7 +76,11 @@ async function pickThreeMatching(
   priceTier: PriceTier | undefined
 ): Promise<Restaurant[]> {
   let avail = pool.filter((r) => !excludeIds.includes(r.id));
-  if (avail.length < 3) avail = pool;
+  // Only fall back to re-showing excluded places when there's truly nothing
+  // else left — filling the missing slots from excludeIds (rather than
+  // discarding the exclusion entirely) avoids repeating already-seen
+  // restaurants just because the non-excluded pool dipped below 3.
+  if (avail.length === 0) avail = pool;
 
   const ordered = orderForChecking(avail);
   const qualifying: Restaurant[] = [];

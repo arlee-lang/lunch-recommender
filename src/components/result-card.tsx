@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Restaurant } from "@/lib/types";
 
 const CATEGORY_TEXT_COLOR: Record<Restaurant["category_group"], string> = {
@@ -9,6 +10,31 @@ const CATEGORY_TEXT_COLOR: Record<Restaurant["category_group"], string> = {
   카페: "#8a5a3a",
   채식: "#3f8a5f",
   기타: "#7a63c9",
+};
+
+// No per-restaurant photo source exists (Kakao's API returns none; Google
+// Places' photo would be a separate billable Enterprise-tier SKU) — a
+// category glyph on a matching tint stands in as each card's "image".
+const CATEGORY_EMOJI: Record<Restaurant["category_group"], string> = {
+  한식: "🍚",
+  중식: "🥟",
+  양식: "🍝",
+  일식: "🍣",
+  분식: "🍢",
+  카페: "☕",
+  채식: "🌱",
+  기타: "🍽",
+};
+
+const CATEGORY_TINT_BG: Record<Restaurant["category_group"], string> = {
+  한식: "#ffe8e4",
+  중식: "#fbeed2",
+  양식: "#e7ecec",
+  일식: "#fbe3ea",
+  분식: "#fde0dc",
+  카페: "#f1e4d8",
+  채식: "#e1f0e6",
+  기타: "#ebe6f7",
 };
 
 interface ResultCardProps {
@@ -31,11 +57,41 @@ function formatRating(rating?: number, count?: number): string | null {
 export function ResultCard({ restaurant, rank, priceFilterActive }: ResultCardProps) {
   const priceText = formatPrice(restaurant.priceMin, restaurant.priceMax);
   const ratingText = formatRating(restaurant.rating, restaurant.userRatingCount);
+  const [justCopied, setJustCopied] = useState(false);
+
+  async function handleShare() {
+    const shareData = {
+      title: restaurant.name,
+      text: `오늘 뭐먹지????에서 추천받은 식당: ${restaurant.name}`,
+      url: restaurant.kakao_map_url,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // user cancelled the share sheet — not an error
+      }
+      return;
+    }
+
+    await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+    setJustCopied(true);
+    setTimeout(() => setJustCopied(false), 1500);
+  }
 
   return (
     <div className="flex items-stretch gap-3 rounded-[16px] border border-[#e5e5e5] bg-white px-4 py-4">
-      <div className="flex w-9 flex-none items-start justify-center pt-0.5">
-        <span className="text-[13px] font-semibold text-[#9a9a9a]">{String(rank).padStart(2, "0")}</span>
+      <div className="relative h-14 w-14 flex-none">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-[14px] text-[28px]"
+          style={{ background: CATEGORY_TINT_BG[restaurant.category_group] }}
+        >
+          {CATEGORY_EMOJI[restaurant.category_group]}
+        </div>
+        <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-[#9a9a9a] shadow-[0_1px_2px_rgba(10,10,10,0.15)]">
+          {rank}
+        </span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -82,6 +138,13 @@ export function ResultCard({ restaurant, rank, priceFilterActive }: ResultCardPr
           >
             카카오맵에서 보기 ↗
           </a>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-[12px] border border-[#e5e5e5] bg-white px-4 text-[13px] font-semibold text-[#0a0a0a] hover:bg-[#faf5e8]"
+          >
+            {justCopied ? "✓ 링크 복사됨" : "↗ 공유하기"}
+          </button>
         </div>
       </div>
     </div>
