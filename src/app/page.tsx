@@ -108,7 +108,10 @@ export default function Home() {
 
       setRestaurants(data.restaurants);
       setUsedFallback(data.usedFallback);
-      setLastIds(data.restaurants.map((r: Restaurant) => r.id));
+      // Accumulate across every click in this session (not just the latest
+      // batch) — otherwise a restaurant shown 2+ clicks ago could reappear
+      // once its id falls out of a single-batch exclude list.
+      setLastIds((prev) => [...new Set([...prev, ...data.restaurants.map((r: Restaurant) => r.id)])]);
       setLastWalkMinutes(walkMinutes);
       setPhase("result");
     } catch {
